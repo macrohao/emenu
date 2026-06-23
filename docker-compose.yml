@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # MongoDB 数据库
+  mongodb:
+    image: mongo:6
+    container_name: emenu-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: emenu
+      MONGO_INITDB_ROOT_PASSWORD: emenu_pass_2026
+
+  # 后端服务
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: emenu-backend
+    restart: always
+    ports:
+      - "5001:5000"
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://emenu:emenu_pass_2026@mongodb:27017/emenu?authSource=admin
+      JWT_SECRET: emenu_jwt_secret_2026
+      JWT_EXPIRES_IN: 7d
+    depends_on:
+      - mongodb
+    volumes:
+      - ./server/uploads:/app/uploads
+
+  # 前端静态文件（Nginx）
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: emenu-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
