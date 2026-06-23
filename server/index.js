@@ -11,18 +11,13 @@ const { auth } = require('./middleware/auth');
 
 const app = express();
 
-// 中间件
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 健康检查（公开）
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-
-// 用户路由（含登录，公开）
 app.use('/api/users', userRoutes);
 
-// 菜单展示：GET 请求公开，其余需要登录
 app.use('/api/categories', (req, res, next) => {
   if (req.method === 'GET') return next();
   return auth(req, res, next);
@@ -33,13 +28,22 @@ app.use('/api/dishes', (req, res, next) => {
   return auth(req, res, next);
 }, dishRoutes);
 
-// 连接数据库并启动服务
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(async () => {
-    console.log('MongoDB connected successfully');
+// Vercel 模式下导出 app
+module.exports = app;
 
-    // Auto-create default admin on first launch
+// ── 数据库连接（支持 Vercel Serverless 复用连接） ──
+let cachedDb = null;
+async function connectDB() {
+  if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
+  const conn = await mongoose.connect(process.env.MONGODB_URI);
+  cachedDb = conn;
+  console.log('MongoDB connected successfully');
+  return conn;
+}
+
+// 非 Vercel 模式（本地运行）才监听端口
+if (!process.env.VERCEL) {
+  connectDB().then(async () => {
     const User = require('./models/User');
     const adminExists = await User.findOne({ role: 'admin' });
     if (!adminExists) {
@@ -49,13 +53,23 @@ mongoose
         nickname: 'Super Admin',
         role: 'admin',
       });
-      console.log('Default admin created: admin / admin123 (please change password after login!)');
+      console.log('Default admin created: admin / admin123');
     }
-
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log('Server running at http://localhost:' + PORT));
-  })
-  .catch((err) => {
+  }).catch((err) => {
     console.error('MongoDB connection failed:', err.message);
     process.exit(1);
   });
+}
+
+// Vercel Serverless：每个请求前确保已连接数据库
+if (process.env.VERCEL) {
+  const handler = app;
+  // Wrap to ensure DB is connected
+  const serverlessHandler = async (req, res) => {
+    await connectDB();
+    return handler(req, res);
+  };
+  module.exports = serverlessHandler;
+}
