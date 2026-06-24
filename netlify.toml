@@ -1,11 +1,16 @@
 [build]
+  base = "client"
   command = "npm install && npm run build"
   publish = "build"
-  base = "client"
 
 [[redirects]]
   from = "/api/*"
-  to = "/api/:splat"
+  to = "https://emenu-alpha.vercel.app/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://emenu-alpha.vercel.app/uploads/:splat"
   status = 200
 
 [[redirects]]

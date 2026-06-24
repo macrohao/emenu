@@ -11,7 +11,28 @@ const { auth } = require('./middleware/auth');
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:3001',
+  'https://emenu-alpha.vercel.app',
+  'https://emenu-git-main-macrohao.vercel.app',
+  'https://macrohao.gitee.io',
+  'https://macrohao.gitee.io/emenu',
+  'https://macrohao.github.io',
+  'https://macrohao.github.io/emenu',
+  'https://shizhenhao001.gitee.io',
+  'https://shizhenhao001.gitee.io/emenu-client'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

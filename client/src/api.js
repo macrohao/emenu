@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://emenu-alpha.vercel.app/api';
 const api = axios.create({ baseURL: API_BASE });
 
 // 请求拦截：自动携带 Token
