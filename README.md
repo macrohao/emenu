@@ -77,6 +77,8 @@ cd client && npm start
 ### 4. 访问
 - 🌐 电子菜单：http://localhost:3000
 - 🔧 后端 API：http://localhost:5000/api
+- user：admin
+- password:admin
 
 ## API 接口
 
